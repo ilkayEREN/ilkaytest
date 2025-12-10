@@ -3,7 +3,7 @@ name: Build and Release V2
 on:
   push:
     tags:
-      - 'v*' # v1.0, v2.0 gibi etiketlerde çalışır
+      - 'v*' # v2.0 etiketi gelince çalışır
 
 permissions:
   contents: write
@@ -13,7 +13,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Kodu Çek (Checkout)
+    - name: Kodu Çek
       uses: actions/checkout@v4
 
     - name: .NET Kurulumu
@@ -21,31 +21,30 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    # --- CLIENT (WPF) ---
-    - name: Client Derle ve Yayınla
+    # 1. CLIENT (WPF) - Tek dosya exe olsun
+    - name: Client (WPF) Derle
       run: dotnet publish JsonABC/JsonABC.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/client
 
     - name: Client Ziple
-      run: Compress-Archive -Path ./publish/client/* -DestinationPath ./Client_App.zip
+      run: Compress-Archive -Path ./publish/client/* -DestinationPath ./HizYarisi_Client.zip
 
-    # --- SERVER (API) ---
-    # Dikkat: Server projesini henüz oluşturmadıysan bu adım hata verir.
-    # Birazdan aşağıda Server projesini oluşturacağız.
-    - name: Server Derle ve Yayınla
-      run: dotnet publish JsonServer/JsonServer.csproj -c Release -r win-x64 --self-contained false -o ./publish/server
+    # 2. SERVER (API) - Bunu da tek dosya yapalım, kurulum derdi olmasın
+    - name: Server (API) Derle
+      run: dotnet publish JsonServer/JsonServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/server
 
     - name: Server Ziple
-      run: Compress-Archive -Path ./publish/server/* -DestinationPath ./Server_App.zip
+      run: Compress-Archive -Path ./publish/server/* -DestinationPath ./HizYarisi_Server.zip
 
-    # --- RELEASE OLUŞTURMA ---
-    - name: GitHub Release Oluştur
+    # 3. GITHUB RELEASE YÜKLEME
+    - name: Release Oluştur
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          Client_App.zip
-          Server_App.zip
+          HizYarisi_Client.zip
+          HizYarisi_Server.zip
         tag_name: ${{ github.ref_name }}
-        name: Versiyon ${{ github.ref_name }}
+        name: Yarış Sürümü ${{ github.ref_name }}
+        body: "Ofis içi hız yarışması için V2 sürümü. Client ve Server dosyaları ektedir."
         draft: false
         prerelease: false
       env:
