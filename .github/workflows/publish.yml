@@ -1,9 +1,9 @@
-name: Build and Release V2
+name: Build and Release V2.1
 
 on:
   push:
     tags:
-      - 'v*' # v2.0 etiketi gelince çalışır
+      - 'v*'
 
 permissions:
   contents: write
@@ -21,21 +21,23 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    # 1. CLIENT (WPF) - Tek dosya exe olsun
+    # --- CLIENT (WPF) ---
     - name: Client (WPF) Derle
-      run: dotnet publish JsonABC/JsonABC.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/client
+      # DİKKAT: Yol "JsonABC/JsonABC/JsonABC.csproj" oldu (Klasör/Klasör/Dosya)
+      run: dotnet publish JsonABC/JsonABC/JsonABC.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/client
 
     - name: Client Ziple
       run: Compress-Archive -Path ./publish/client/* -DestinationPath ./HizYarisi_Client.zip
 
-    # 2. SERVER (API) - Bunu da tek dosya yapalım, kurulum derdi olmasın
+    # --- SERVER (API) ---
     - name: Server (API) Derle
-      run: dotnet publish JsonServer/JsonServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/server
+      # DİKKAT: Yol "JsonABC/JsonServer/JsonServer.csproj" oldu
+      run: dotnet publish JsonABC/JsonServer/JsonServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/server
 
     - name: Server Ziple
       run: Compress-Archive -Path ./publish/server/* -DestinationPath ./HizYarisi_Server.zip
 
-    # 3. GITHUB RELEASE YÜKLEME
+    # --- RELEASE ---
     - name: Release Oluştur
       uses: softprops/action-gh-release@v2
       with:
@@ -44,7 +46,7 @@ jobs:
           HizYarisi_Server.zip
         tag_name: ${{ github.ref_name }}
         name: Yarış Sürümü ${{ github.ref_name }}
-        body: "Ofis içi hız yarışması için V2 sürümü. Client ve Server dosyaları ektedir."
+        body: "Otomatik düzeltilmiş dosya yolları ile V2.1 sürümü."
         draft: false
         prerelease: false
       env:
