@@ -43,11 +43,21 @@
         </Grid>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="🏁 Hız Yarışı Başlat" Click="BtnRace_Click" Width="150" Height="30" Background="Orange" FontWeight="Bold" Margin="5"/>
             <Button Content="Temizle" Width="100" Height="35" Margin="0,0,10,0" Click="BtnClear_Click"/>
             <Button Content="Sırala ve Güzelleştir" Width="160" Height="35" 
                     Background="#007ACC" Foreground="White" FontWeight="Bold" 
                     BorderThickness="0" Cursor="Hand"
                     Click="BtnSort_Click"/>
         </StackPanel>
+        <ListView x:Name="ResultList" Height="150" VerticalAlignment="Bottom" Background="#222" Foreground="#00FF00">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Sıra" DisplayMemberBinding="{Binding Rank}" Width="50"/>
+                    <GridViewColumn Header="Kullanıcı" DisplayMemberBinding="{Binding Username}" Width="150"/>
+                    <GridViewColumn Header="Gecikme (ms)" DisplayMemberBinding="{Binding LatencyMs}" Width="100"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
     </Grid>
 </Window>

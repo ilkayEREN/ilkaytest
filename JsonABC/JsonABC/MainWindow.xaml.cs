@@ -1,93 +1,126 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.AspNetCore.SignalR.Client; // Kütüphaneyi yükleyince burası düzelecek
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace JsonABC
 {
+    // Listede göstereceğimiz veri modeli
+    public class UserInfo
+    {
+        public string Username { get; set; }
+        public int Rank { get; set; }
+        public double LatencyMs { get; set; }
+        public string IpAddress { get; set; }
+    }
+
     public partial class MainWindow : Window
     {
+        // Bağlantı nesnesini sınıfın en tepesinde tanımlıyoruz ki her yerden erişebilelim
+        HubConnection connection;
+
         public MainWindow()
         {
             InitializeComponent();
+            InitializeSignalR(); // Uygulama açılınca bağlantıyı kur
         }
 
-        // Sırala Butonu Tıklandığında İlkay Seni Selamlar.
-        private void BtnSort_Click(object sender, RoutedEventArgs e)
+        // SignalR Ayarları ve Bağlantı
+        private async void InitializeSignalR()
         {
-            string rawJson = InputJson.Text;
+            // BURASI ÖNEMLİ: Kendi IP adresini veya localhost'u yaz
+            string url = "http://localhost:5000/apphub";
 
-            // Boşsa işlem yapma
-            if (string.IsNullOrWhiteSpace(rawJson))
+            connection = new HubConnectionBuilder()
+                .WithUrl(url)
+                .WithAutomaticReconnect()
+                .Build();
+
+            // 1. Sunucu "PingRequest" gönderirse (Yarış başlıyor)
+            connection.On<DateTime>("PingRequest", async (serverTime) =>
             {
-                MessageBox.Show("Sol tarafı boş bırakma keke.", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+                // Hemen cevap ver (Pong)
+                await connection.InvokeAsync("PongResponse", serverTime);
+            });
+
+            // 2. Yarış bittiğinde sonuçları al
+            connection.On<List<UserInfo>>("RaceFinished", (results) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    // XAML tarafında ResultList adında bir ListView olmalı
+                    if (ResultList != null)
+                    {
+                        ResultList.ItemsSource = results;
+                    }
+                    MessageBox.Show("Yarış Bitti! Sonuçlar listelendi.");
+                });
+            });
 
             try
             {
-                // 1. JSON'ı oku (Parse et)
-                var parsedJson = JToken.Parse(rawJson);
-
-                // 2. Sıralama fonksiyonunu çağır (Recursive)
-                SortJson(parsedJson);
-
-                // 3. Düzenlenmiş halini sağ kutuya yaz
-                OutputJson.Text = parsedJson.ToString(Formatting.Indented);
+                await connection.StartAsync();
+                // Rastgele bir isimle giriş yap
+                string randomName = "PC_" + new Random().Next(100, 999);
+                await connection.InvokeAsync("Login", randomName);
             }
-            catch (JsonReaderException ex)
+            catch
             {
-                MessageBox.Show($"JSON Format Hatası!\n\n{ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Beklenmedik bir hata oluştu:\n{ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                // Sunucu kapalıysa uygulama çökmesin diye boş geçiyoruz
             }
         }
 
-        // Temizle Butonu
+        // HIZ YARIŞI BUTONU
+        private async void BtnRace_Click(object sender, RoutedEventArgs e)
+        {
+            if (connection.State == HubConnectionState.Connected)
+            {
+                await connection.InvokeAsync("StartRace");
+                MessageBox.Show("Yarış başlatıldı! 3 saniye sonra sonuçlar gelecek.");
+            }
+            else
+            {
+                MessageBox.Show("Sunucuya bağlı değil! Lütfen Server uygulamasını çalıştırın.");
+            }
+        }
+
+        // ESKİ JSON SIRALAMA BUTONU
+        private void BtnSort_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(InputJson.Text)) return;
+            try
+            {
+                var parsed = JToken.Parse(InputJson.Text);
+                SortJson(parsed);
+                OutputJson.Text = parsed.ToString(Formatting.Indented);
+            }
+            catch { MessageBox.Show("Geçersiz JSON formatı."); }
+        }
+
+        // TEMİZLE BUTONU
         private void BtnClear_Click(object sender, RoutedEventArgs e)
         {
             InputJson.Clear();
             OutputJson.Clear();
-            InputJson.Focus(); // İmleci tekrar giriş kutusuna koy
         }
 
-        // -.-.- Recursive (Özyinelemeli) Sıralama Mantığı -.-.-
-        // Bu fonksiyon, iç içe geçmiş objeleri bile bulup sıralar.
+        // Recursive Sıralama Mantığı
         private void SortJson(JToken token)
         {
             if (token is JObject jObj)
             {
-                // Özellikleri al
-                var properties = jObj.Properties().ToList();
-
-                // Objeyi boşalt
+                var props = jObj.Properties().ToList();
                 jObj.RemoveAll();
-
-                // İsme göre sırala ve tekrar ekle
-                foreach (var prop in properties.OrderBy(p => p.Name))
+                foreach (var prop in props.OrderBy(p => p.Name))
                 {
-                    // Eğer özelliğin değeri de bir obje ise, tekrar içeri gir (Recursion)
                     SortJson(prop.Value);
                     jObj.Add(prop);
                 }
             }
             else if (token is JArray jArray)
             {
-                // Eğer bu bir diziyse (Array), içindeki her elemanı kontrol et
-                foreach (var item in jArray)
-                {
-                    SortJson(item);
-                }
+                foreach (var item in jArray) SortJson(item);
             }
         }
     }
