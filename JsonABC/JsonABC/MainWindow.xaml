@@ -1,0 +1,53 @@
+﻿<Window x:Class="JsonABC.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="JSON ABC - Sıralayıcı" Height="600" Width="900"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="JSON Alphabetizer" FontSize="24" FontWeight="Bold" 
+                   Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <DockPanel Grid.Column="0">
+                <TextBlock Text="Karışık JSON" DockPanel.Dock="Top" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <TextBox x:Name="InputJson" AcceptsReturn="True" AcceptsTab="True"
+                         VerticalScrollBarVisibility="Auto" 
+                         FontFamily="Consolas" FontSize="13" Padding="10"
+                         BorderBrush="#CCC" BorderThickness="1"/>
+            </DockPanel>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="➔" FontSize="30" Foreground="#555"/>
+            </StackPanel>
+
+            <DockPanel Grid.Column="2">
+                <TextBlock Text="Sıralı JSON (ABC)" DockPanel.Dock="Top" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <TextBox x:Name="OutputJson" IsReadOnly="True" 
+                         VerticalScrollBarVisibility="Auto"
+                         FontFamily="Consolas" FontSize="13" Padding="10"
+                         Background="#F9F9F9" BorderBrush="#CCC" BorderThickness="1"/>
+            </DockPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="Temizle" Width="100" Height="35" Margin="0,0,10,0" Click="BtnClear_Click"/>
+            <Button Content="Sırala ve Güzelleştir" Width="160" Height="35" 
+                    Background="#007ACC" Foreground="White" FontWeight="Bold" 
+                    BorderThickness="0" Cursor="Hand"
+                    Click="BtnSort_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
