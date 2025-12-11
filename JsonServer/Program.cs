@@ -2,18 +2,14 @@ using JsonServer.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- KRÝTÝK AYAR: HERKESE AÇIL ---
-// Bu satýr olmazsa arkadaþýn baðlanamaz.
-// Uygulamayý 5000 portuna ve tüm IP'lere sabitliyoruz.
+// 1. IP AYARI: Herkese açýk (Ayný kalýyor)
 builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
-// --- SERVÝSLER ---
+// 2. SERVÝSLER (Swagger satýrlarýný sildik)
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// CORS AYARI (Ýzinler)
+// 3. ÝZÝNLER (CORS - Ayný kalýyor)
 builder.Services.AddCors(options => options.AddPolicy("AllowAll",
     p => p.SetIsOriginAllowed(_ => true)
           .AllowAnyMethod()
@@ -22,14 +18,14 @@ builder.Services.AddCors(options => options.AddPolicy("AllowAll",
 
 var app = builder.Build();
 
-// --- UYGULAMA AYARLARI ---
-
-// Release modunda bile Swagger (API Dokümaný) görünsün
-app.UseSwagger();
-app.UseSwaggerUI();
-
+// 4. UYGULAMA AYARLARI (Swagger UI middleware'lerini sildik)
 app.UseCors("AllowAll");
 app.MapControllers();
-app.MapHub<AppHub>("/apphub");
+app.MapHub<AppHub>("/apphub"); // Ana baðlantý noktasý burasý
+
+// Sunucu baþladýðýnda konsola bilgi yazsýn
+Console.WriteLine("Server Baslatildi!");
+Console.WriteLine("Baglanti Adresi: http://[SENIN_IP_ADRESIN]:5000/apphub");
+Console.WriteLine("Client uygulamasindan bu IP ile baglanabilirsiniz.");
 
 app.Run();
