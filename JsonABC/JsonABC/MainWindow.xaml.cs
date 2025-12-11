@@ -32,23 +32,34 @@ namespace JsonABC
         // --- BAĞLAN BUTONU ---
         private async void BtnConnect_Click(object sender, RoutedEventArgs e)
         {
-            string ip = TxtServerIp.Text;
+            string ipOrUrl = TxtServerIp.Text;
             string user = TxtUsername.Text;
 
-            if (string.IsNullOrWhiteSpace(ip) || string.IsNullOrWhiteSpace(user))
+            if (string.IsNullOrWhiteSpace(ipOrUrl) || string.IsNullOrWhiteSpace(user))
             {
-                MessageBox.Show("Lütfen IP adresi ve Kullanıcı Adı giriniz.");
+                MessageBox.Show("Lütfen IP adresi (veya Link) ve Kullanıcı Adı giriniz.");
                 return;
             }
 
-            await ConnectToServer(ip, user);
+            await ConnectToServer(ipOrUrl, user);
         }
 
         // --- SUNUCUYA BAĞLANMA MANTIĞI ---
-        private async Task ConnectToServer(string ipAddress, string username)
+        private async Task ConnectToServer(string ipAddressOrUrl, string username)
         {
-            // Adresi dinamik oluşturuyoruz
-            string url = $"http://{ipAddress}:5000/apphub";
+            string url;
+
+            // 1. KONTROL: Kullanıcı tam bir link mi yapıştırdı (Ngrok gibi)?
+            if (ipAddressOrUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                // Eğer linkin sonunda /apphub yoksa biz ekleyelim
+                url = ipAddressOrUrl.EndsWith("/apphub") ? ipAddressOrUrl : ipAddressOrUrl + "/apphub";
+            }
+            else
+            {
+                // 2. DURUM: Sadece IP yazdıysa (Klasik LAN bağlantısı)
+                url = $"http://{ipAddressOrUrl}:5000/apphub";
+            }
 
             try
             {
@@ -81,7 +92,7 @@ namespace JsonABC
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"BAĞLANTI HATASI!\n\n1. Karşı tarafın sunucuyu (Siyah Ekran) açtığından emin olun.\n2. IP adresini doğru yazdığınızdan emin olun.\n3. Güvenlik duvarına izin verildiğinden emin olun.\n\nHata Detayı: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"BAĞLANTI HATASI!\n\n1. Sunucunun açık olduğundan emin olun.\n2. Adresi doğru yazdığınızdan emin olun.\n3. Güvenlik duvarı izinlerini kontrol edin.\n\nHata Detayı: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
