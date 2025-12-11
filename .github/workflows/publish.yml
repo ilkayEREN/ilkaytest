@@ -1,4 +1,4 @@
-name: Debug Build V3
+name: Build and Release V3.1
 
 on:
   push:
@@ -21,16 +21,9 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    # --- İŞTE AJAN KOD BURASI ---
-    - name: 📂 DOSYA YAPISINI GÖSTER (DEBUG)
-      run: |
-        echo "--- ANA DİZİN ---"
-        ls -R
-        echo "-----------------"
-
     # --- CLIENT (WPF) ---
     - name: Client (WPF) Derle
-      # Burası muhtemelen çalışıyor, dokunmadık
+      # Loglara göre Client yolu: JsonABC/JsonABC/JsonABC.csproj (Bu zaten çalışıyordu)
       run: dotnet publish JsonABC/JsonABC/JsonABC.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/client
 
     - name: Client Ziple
@@ -38,25 +31,22 @@ jobs:
 
     # --- SERVER (API) ---
     - name: Server (API) Derle
-      # Hata veren yer burası. Yukarıdaki LS komutu sayesinde doğru yolu bulacağız.
-      # Şimdilik eski yolu bırakıyorum, hata verse bile logları göreceğiz.
-      continue-on-error: true 
-      run: dotnet publish JsonABC/JsonServer/JsonServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/server
+      # DÜZELTİLEN YER: Loglara göre Server yolu direkt ana dizindeki JsonServer klasöründe.
+      run: dotnet publish JsonServer/JsonServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish/server
 
-    - name: Server Ziple (Hata varsa atla)
-      if: success()
+    - name: Server Ziple
       run: Compress-Archive -Path ./publish/server/* -DestinationPath ./HizYarisi_Server.zip
 
     # --- RELEASE ---
     - name: Release Oluştur
-      if: success()
       uses: softprops/action-gh-release@v2
       with:
         files: |
           HizYarisi_Client.zip
           HizYarisi_Server.zip
         tag_name: ${{ github.ref_name }}
-        name: Debug Sürümü ${{ github.ref_name }}
+        name: Final Sürüm ${{ github.ref_name }}
+        body: "Hız yarışı ve JSON araçları içeren kararlı sürüm."
         draft: false
         prerelease: false
       env:
