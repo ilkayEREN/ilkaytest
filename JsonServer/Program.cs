@@ -1,16 +1,16 @@
-using JsonServer.Hubs; 
+using JsonServer.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // --- SERVÝSLER ---
 builder.Services.AddControllers();
-builder.Services.AddSignalR(); // <--- ÝÞTE BU: Anlýk haberleþme servisi
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS AYARI: Baþka bilgisayarlarýn (arkadaþlarýnýn) baðlanmasýna izin ver
+// CORS AYARI
 builder.Services.AddCors(options => options.AddPolicy("AllowAll",
-    p => p.SetIsOriginAllowed(_ => true) // Her yerden gelen isteði kabul et
+    p => p.SetIsOriginAllowed(_ => true)
           .AllowAnyMethod()
           .AllowAnyHeader()
           .AllowCredentials()));
@@ -18,10 +18,14 @@ builder.Services.AddCors(options => options.AddPolicy("AllowAll",
 var app = builder.Build();
 
 // --- UYGULAMA AYARLARI ---
-app.UseCors("AllowAll"); // Yukarýdaki izni aktif et
-app.MapControllers();
 
-// Bu satýr "AppHub" sýnýfýný baðlar.
+// DÝKKAT: if (app.Environment.IsDevelopment()) satýrýný kaldýrdýk!
+// Artýk her durumda (Release modunda bile) Swagger açýlacak.
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseCors("AllowAll");
+app.MapControllers();
 app.MapHub<AppHub>("/apphub");
 
 app.Run();

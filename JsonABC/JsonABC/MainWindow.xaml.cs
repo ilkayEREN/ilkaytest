@@ -85,17 +85,26 @@ namespace JsonABC
             }
         }
 
-        // ESKİ JSON SIRALAMA BUTONU
+        // JSON SIRALAMA BUTONU
         private void BtnSort_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(InputJson.Text)) return;
+            // 1. KONTROL: Kutu boş mu?
+            if (string.IsNullOrWhiteSpace(InputJson.Text))
+            {
+                MessageBox.Show("sol tarafı boş bırakma keke", "Eksik Veri", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             try
             {
                 var parsed = JToken.Parse(InputJson.Text);
                 SortJson(parsed);
                 OutputJson.Text = parsed.ToString(Formatting.Indented);
             }
-            catch { MessageBox.Show("Geçersiz JSON formatı."); }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Geçersiz JSON formatı!\n\nHata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // TEMİZLE BUTONU
