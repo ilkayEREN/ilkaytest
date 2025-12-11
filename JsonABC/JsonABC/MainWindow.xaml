@@ -1,61 +1,66 @@
 ﻿<Window x:Class="JsonABC.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="JSON ABC - Sıralayıcı" Height="600" Width="900"
+        Title="JSON ABC - Hız Yarışı v3.3" Height="650" Width="950"
         WindowStartupLocation="CenterScreen">
 
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="JSON Alphabetizer" FontSize="24" FontWeight="Bold" 
-                   Foreground="#333" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+        <Border Grid.Row="0" Background="#EEE" Padding="10" Margin="0,0,0,10" HorizontalAlignment="Center" CornerRadius="5">
+            <StackPanel x:Name="LoginPanel" Orientation="Horizontal">
+                <TextBlock Text="Sunucu IP:" VerticalAlignment="Center" Margin="0,0,5,0" FontWeight="Bold"/>
+                <TextBox x:Name="TxtServerIp" Text="localhost" Width="120" Margin="0,0,15,0" VerticalContentAlignment="Center"/>
 
-        <Grid Grid.Row="1">
+                <TextBlock Text="Adınız:" VerticalAlignment="Center" Margin="0,0,5,0" FontWeight="Bold"/>
+                <TextBox x:Name="TxtUsername" Width="100" Margin="0,0,10,0" VerticalContentAlignment="Center"/>
+
+                <Button Content="Bağlan" Click="BtnConnect_Click" Width="80" Background="#27AE60" Foreground="White" FontWeight="Bold"/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+            <TextBlock Text="JSON Editor &amp; Race" FontSize="20" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center" Margin="0,0,20,0"/>
+            <Button Content="🏁 Hız Yarışı Başlat" Click="BtnRace_Click" Width="150" Height="30" Background="Orange" FontWeight="Bold"/>
+        </StackPanel>
+
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <DockPanel Grid.Column="0">
                 <TextBlock Text="Karışık JSON" DockPanel.Dock="Top" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                <TextBox x:Name="InputJson" AcceptsReturn="True" AcceptsTab="True"
-                         VerticalScrollBarVisibility="Auto" 
-                         FontFamily="Consolas" FontSize="13" Padding="10"
-                         BorderBrush="#CCC" BorderThickness="1"/>
+                <TextBox x:Name="InputJson" AcceptsReturn="True" AcceptsTab="True" VerticalScrollBarVisibility="Auto" 
+                         FontFamily="Consolas" FontSize="13" Padding="10" BorderBrush="#CCC" BorderThickness="1"/>
             </DockPanel>
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="➔" FontSize="30" Foreground="#555"/>
+                <Button Content="Sırala" Click="BtnSort_Click" Margin="0,0,0,10" Background="#007ACC" Foreground="White" Height="40" Width="40" FontSize="10"/>
+                <Button Content="Sil" Click="BtnClear_Click" Background="#E74C3C" Foreground="White" Height="40" Width="40" FontSize="10"/>
             </StackPanel>
 
             <DockPanel Grid.Column="2">
                 <TextBlock Text="Sıralı JSON (ABC)" DockPanel.Dock="Top" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                <TextBox x:Name="OutputJson" IsReadOnly="True" 
-                         VerticalScrollBarVisibility="Auto"
-                         FontFamily="Consolas" FontSize="13" Padding="10"
-                         Background="#F9F9F9" BorderBrush="#CCC" BorderThickness="1"/>
+                <TextBox x:Name="OutputJson" IsReadOnly="True" VerticalScrollBarVisibility="Auto"
+                         FontFamily="Consolas" FontSize="13" Padding="10" Background="#F9F9F9" BorderBrush="#CCC" BorderThickness="1"/>
             </DockPanel>
         </Grid>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-            <Button Content="🏁 Hız Yarışı Başlat" Click="BtnRace_Click" Width="150" Height="30" Background="Orange" FontWeight="Bold" Margin="5"/>
-            <Button Content="Temizle" Width="100" Height="35" Margin="0,0,10,0" Click="BtnClear_Click"/>
-            <Button Content="Sırala ve Güzelleştir" Width="160" Height="35" 
-                    Background="#007ACC" Foreground="White" FontWeight="Bold" 
-                    BorderThickness="0" Cursor="Hand"
-                    Click="BtnSort_Click"/>
-        </StackPanel>
-        <ListView x:Name="ResultList" Height="150" VerticalAlignment="Bottom" Background="#222" Foreground="#00FF00">
+        <ListView x:Name="ResultList" Grid.Row="3" Height="120" Margin="0,10,0,0" Background="#222" Foreground="#00FF00" FontFamily="Consolas">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Sıra" DisplayMemberBinding="{Binding Rank}" Width="50"/>
                     <GridViewColumn Header="Kullanıcı" DisplayMemberBinding="{Binding Username}" Width="150"/>
                     <GridViewColumn Header="Gecikme (ms)" DisplayMemberBinding="{Binding LatencyMs}" Width="100"/>
+                    <GridViewColumn Header="IP Adresi" DisplayMemberBinding="{Binding IpAddress}" Width="120"/>
                 </GridView>
             </ListView.View>
         </ListView>

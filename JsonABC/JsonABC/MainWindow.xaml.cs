@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.SignalR.Client; // Kütüphaneyi yükleyince burası düzelecek
+﻿using Microsoft.AspNetCore.SignalR.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
 namespace JsonABC
 {
-    // Listede göstereceğimiz veri modeli
     public class UserInfo
     {
         public string Username { get; set; }
@@ -17,81 +20,91 @@ namespace JsonABC
 
     public partial class MainWindow : Window
     {
-        // Bağlantı nesnesini sınıfın en tepesinde tanımlıyoruz ki her yerden erişebilelim
         HubConnection connection;
 
         public MainWindow()
         {
             InitializeComponent();
-            InitializeSignalR(); // Uygulama açılınca bağlantıyı kur
+            // DİKKAT: Artık uygulama açılınca otomatik bağlanmıyoruz.
+            // Kullanıcı butona basınca bağlanacak.
         }
 
-        // SignalR Ayarları ve Bağlantı
-        private async void InitializeSignalR()
+        // --- BAĞLAN BUTONU ---
+        private async void BtnConnect_Click(object sender, RoutedEventArgs e)
         {
-            // BURASI ÖNEMLİ: Kendi IP adresini veya localhost'u yaz
-            string url = "http://localhost:5000/apphub";
+            string ip = TxtServerIp.Text;
+            string user = TxtUsername.Text;
 
-            connection = new HubConnectionBuilder()
-                .WithUrl(url)
-                .WithAutomaticReconnect()
-                .Build();
-
-            // 1. Sunucu "PingRequest" gönderirse (Yarış başlıyor)
-            connection.On<DateTime>("PingRequest", async (serverTime) =>
+            if (string.IsNullOrWhiteSpace(ip) || string.IsNullOrWhiteSpace(user))
             {
-                // Hemen cevap ver (Pong)
-                await connection.InvokeAsync("PongResponse", serverTime);
-            });
+                MessageBox.Show("Lütfen IP adresi ve Kullanıcı Adı giriniz.");
+                return;
+            }
 
-            // 2. Yarış bittiğinde sonuçları al
-            connection.On<List<UserInfo>>("RaceFinished", (results) =>
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    // XAML tarafında ResultList adında bir ListView olmalı
-                    if (ResultList != null)
-                    {
-                        ResultList.ItemsSource = results;
-                    }
-                    MessageBox.Show("Yarış Bitti! Sonuçlar listelendi.");
-                });
-            });
+            await ConnectToServer(ip, user);
+        }
+
+        // --- SUNUCUYA BAĞLANMA MANTIĞI ---
+        private async Task ConnectToServer(string ipAddress, string username)
+        {
+            // Adresi dinamik oluşturuyoruz
+            string url = $"http://{ipAddress}:5000/apphub";
 
             try
             {
+                connection = new HubConnectionBuilder()
+                    .WithUrl(url)
+                    .WithAutomaticReconnect()
+                    .Build();
+
+                // 1. PING GELDİĞİNDE (Yarış Başlıyor)
+                connection.On<DateTime>("PingRequest", async (serverTime) =>
+                {
+                    await connection.InvokeAsync("PongResponse", serverTime);
+                });
+
+                // 2. YARIŞ BİTTİĞİNDE
+                connection.On<List<UserInfo>>("RaceFinished", (results) =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (ResultList != null) ResultList.ItemsSource = results;
+                        MessageBox.Show("Yarış Bitti! Sonuçlar güncellendi.");
+                    });
+                });
+
                 await connection.StartAsync();
-                // Rastgele bir isimle giriş yap
-                string randomName = "PC_" + new Random().Next(100, 999);
-                await connection.InvokeAsync("Login", randomName);
+                await connection.InvokeAsync("Login", username);
+
+                MessageBox.Show($"Bağlantı Başarılı!\nBağlanılan: {url}");
+                LoginPanel.Visibility = Visibility.Collapsed; // Paneli gizle
             }
-            catch
+            catch (Exception ex)
             {
-                // Sunucu kapalıysa uygulama çökmesin diye boş geçiyoruz
+                MessageBox.Show($"BAĞLANTI HATASI!\n\n1. Karşı tarafın sunucuyu (Siyah Ekran) açtığından emin olun.\n2. IP adresini doğru yazdığınızdan emin olun.\n3. Güvenlik duvarına izin verildiğinden emin olun.\n\nHata Detayı: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // HIZ YARIŞI BUTONU
+        // --- YARIŞ BAŞLAT BUTONU ---
         private async void BtnRace_Click(object sender, RoutedEventArgs e)
         {
-            if (connection.State == HubConnectionState.Connected)
+            if (connection != null && connection.State == HubConnectionState.Connected)
             {
                 await connection.InvokeAsync("StartRace");
-                MessageBox.Show("Yarış başlatıldı! 3 saniye sonra sonuçlar gelecek.");
+                MessageBox.Show("Yarış başlatıldı! Sonuçlar bekleniyor...");
             }
             else
             {
-                MessageBox.Show("Sunucuya bağlı değil! Lütfen Server uygulamasını çalıştırın.");
+                MessageBox.Show("Sunucuya bağlı değilsiniz!", "Uyarı", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
-        // JSON SIRALAMA BUTONU
+        // --- JSON SIRALAMA ---
         private void BtnSort_Click(object sender, RoutedEventArgs e)
         {
-            // 1. KONTROL: Kutu boş mu?
             if (string.IsNullOrWhiteSpace(InputJson.Text))
             {
-                MessageBox.Show("sol tarafı boş bırakma keke", "Eksik Veri", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Lütfen sol tarafa JSON yapıştırın.", "Eksik Veri", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -103,18 +116,16 @@ namespace JsonABC
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Geçersiz JSON formatı!\n\nHata: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Geçersiz JSON!\n{ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        // TEMİZLE BUTONU
         private void BtnClear_Click(object sender, RoutedEventArgs e)
         {
             InputJson.Clear();
             OutputJson.Clear();
         }
 
-        // Recursive Sıralama Mantığı
         private void SortJson(JToken token)
         {
             if (token is JObject jObj)
